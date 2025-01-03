@@ -1,14 +1,19 @@
 #pragma once
 #include <SDL.h>
 
+class Engine;
+
 class UI {
    public:
+	UI(Engine* engine) : engine(engine) {};
+
 	void run();
 	bool hasImgui();
-	bool displayDebug();
 
    private:
 	void mainloop();
+
+	Engine* engine;
 
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;

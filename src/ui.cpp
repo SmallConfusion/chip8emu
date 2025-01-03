@@ -4,6 +4,8 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <print>
+#include "engine/debug.h"
+#include "engine/engine.h"
 
 void UI::run() {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -56,10 +58,6 @@ bool UI::hasImgui() {
 	return true;
 }
 
-bool UI::displayDebug() {
-	return debugVisible;
-}
-
 void UI::mainloop() {
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev) != 0) {
@@ -83,10 +81,10 @@ void UI::mainloop() {
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 
-	if (displayDebug()) {
-		ImGui::Begin("My first tool");
-		ImGui::Text("hello world");
-		ImGui::End();
+	engine->update();
+
+	if (debugVisible) {
+		Debug::show(*engine);
 	}
 
 	ImGui::EndFrame();
