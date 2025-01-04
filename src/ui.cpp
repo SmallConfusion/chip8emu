@@ -58,6 +58,12 @@ bool UI::hasImgui() {
 	return true;
 }
 
+void UI::debugInfo(std::function<void(void)> info) const {
+	if (debugVisible) {
+		info();
+	}
+}
+
 void UI::mainloop() {
 	step = false;
 

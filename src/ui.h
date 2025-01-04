@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include "engine/engine.h"
+#include <functional>
 
 class UI {
    public:
@@ -10,6 +11,8 @@ class UI {
 
 	void run();
 	bool hasImgui();
+
+	void debugInfo(std::function<void(void)> info) const;
 
 
    private:

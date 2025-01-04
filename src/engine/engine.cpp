@@ -1,4 +1,5 @@
 #include "engine.h"
+#include <imgui.h>
 #include <fstream>
 #include <print>
 #include "engine/engineTypes.h"
@@ -37,11 +38,19 @@ void Engine::loadROM(const char* filename) {
 }
 
 void Engine::update(const UI& ui) {
-	constexpr bool STEP_MODE = false;
+	ui.debugInfo([&] {
+		ImGui::Begin("Engine config");
+
+		ImGui::Checkbox("Step mode", &stepMode);
+
+		ImGui::Checkbox("Bit shift comatability (8XY6 and 8XYE)", &shiftCompat);
+
+		ImGui::End();
+	});
 
 	int cycles = 700 / 165;
 
-	if (STEP_MODE) {
+	if (stepMode) {
 		cycles = ui.step ? 1 : 0;
 	}
 
@@ -112,6 +121,11 @@ void Engine::loadSystem() {
 void Engine::cycle() {
 	inst fetched = (ram[pc] << 8) + ram[pc + 1];
 	pc += 2;
+
+	auto noInst = [&]() {
+		std::println("Instruction {:} at {:} not recognized!",
+					 util::instructionToHex(fetched), util::addrToHex(pc - 2));
+	};
 
 	if (fetched == I_CLEAR_SCREEN) {
 		display.reset();
@@ -185,9 +199,66 @@ void Engine::cycle() {
 		pc = stack.top();
 		stack.pop();
 
+		// Logic and arithmatic instructions 8XY0
+	} else if ((fetched & 0xF000) == 0x8000) {
+		int x = (fetched & 0x0F00) >> 8;
+		int y = (fetched & 0x00F0) >> 4;
+
+		int end = fetched & 0x000F;
+
+		switch (end) {
+			case 0:
+				vreg[x] = vreg[y];
+				break;
+
+			case 1:
+				vreg[x] |= vreg[y];
+				break;
+
+			case 2:
+				vreg[x] &= vreg[y];
+				break;
+
+			case 3:
+				vreg[x] ^= vreg[y];
+				break;
+
+			case 4:
+				vreg[x] += vreg[y];
+				break;
+
+			case 5:	 // Subtract - OUT OF ORDER
+				vreg[x] = vreg[x] - vreg[y];
+				break;
+
+			case 7:	 // Subtract - OUT OF ORDER
+				vreg[x] = vreg[y] - vreg[x];
+				break;
+
+			case 6:	 // Shift - OUT OF ORDER
+				if (shiftCompat) {
+					vreg[x] = vreg[y];
+				}
+
+				vreg[0xF] = vreg[x] & 0b1;
+				vreg[x] = vreg[x] >> 1;
+				break;
+
+			case 0xE:
+				if (shiftCompat) {
+					vreg[x] = vreg[y];
+				}
+
+				vreg[0xF] = vreg[x] & 0b1;
+				vreg[x] = vreg[x] << 1;
+				break;
+
+			default:
+				noInst();
+		}
+
 	} else {
-		std::println("Instruction {:} at {:} not recognized!",
-					 util::instructionToHex(fetched), util::addrToHex(pc - 2));
+		noInst();
 	}
 }
 

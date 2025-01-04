@@ -30,6 +30,9 @@ class Engine {
 	std::stack<addr> stack;
 
    private:
+	bool stepMode = false;
+	bool shiftCompat = false;  // https://chip8.gulrak.net/#quirk5
+
 	void reset();
 	void loadSystem();
 	void cycle();
