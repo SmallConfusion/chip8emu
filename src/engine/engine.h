@@ -41,19 +41,19 @@ class Engine {
 	double nextTimerDec = 0;
 	double nextInstruction = 0;
 
-	double cps = 650;
+	double cps = 1000;
 
 	bool stepMode = false;
-	bool shiftCompat = false;  // https://chip8.gulrak.net/#quirk5
+	bool shiftCompat = true;  // https://chip8.gulrak.net/#quirk5
 
 	// https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#bnnn-jump-with-offset
 	bool bxnnCompat = false;
 
 	// https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#fx1e-add-to-index
-	bool addIndexOverflowCompat = false;
+	bool addIndexOverflowCompat = true;
 
 	// https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#fx55-and-fx65-store-and-load-memory
-	bool memoryIncI = false;
+	bool memoryIncI = true;
 
 	// https://chip8.gulrak.net/#quirk4at
 	bool binaryResetVFCompat = true;

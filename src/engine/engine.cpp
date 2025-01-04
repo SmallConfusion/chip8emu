@@ -252,50 +252,60 @@ bool Engine::cycle(const bool keymap[16]) {
 
 		switch (end) {
 			case 0:
+				vreg[x] = vreg[y];
+
 				if (binaryResetVFCompat) {
 					vreg[0xF] = 0;
 				}
 
-				vreg[x] = vreg[y];
 				break;
 
 			case 1:
+				vreg[x] |= vreg[y];
+
 				if (binaryResetVFCompat) {
 					vreg[0xF] = 0;
 				}
 
-				vreg[x] |= vreg[y];
 				break;
 
 			case 2:
+				vreg[x] &= vreg[y];
+
 				if (binaryResetVFCompat) {
 					vreg[0xF] = 0;
 				}
 
-				vreg[x] &= vreg[y];
 				break;
 
 			case 3:
+				vreg[x] ^= vreg[y];
+
 				if (binaryResetVFCompat) {
 					vreg[0xF] = 0;
 				}
 
-				vreg[x] ^= vreg[y];
 				break;
 
 			case 4:
-				vreg[0xF] = (int)vreg[x] + (int)vreg[y] > 255 ? 1 : 0;
-				vreg[x] += vreg[y];
+				short res = vreg[x] + vreg[y];
+				vreg[x] = res & 0xF;			
+				vreg[0xF] = res > 0xF;
+
 				break;
 
 			case 5:	 // Subtract - OUT OF ORDER
-				vreg[0xF] = (int)vreg[x] - (int)vreg[y] > 0 ? 1 : 0;
-				vreg[x] = vreg[x] - vreg[y];
+				short res = vreg[x] - vreg[y];
+				vreg[x] = res & 0xF;
+				vreg[0xF] = res > 0;
+
 				break;
 
 			case 7:	 // Subtract - OUT OF ORDER
-				vreg[0xF] = (int)vreg[y] - (int)vreg[x] > 0 ? 1 : 0;
-				vreg[x] = vreg[y] - vreg[x];
+				short res = vreg[y] - vreg[x];
+				vreg[x] = res & 0xF;
+				vreg[0xF] = res > 0;
+
 				break;
 
 			case 6:	 // Shift - OUT OF ORDER
@@ -303,7 +313,7 @@ bool Engine::cycle(const bool keymap[16]) {
 					vreg[x] = vreg[y];
 				}
 
-				vreg[0xF] = vreg[x] & 0b1;
+				byte carry = vreg[x] & 0b1;
 				vreg[x] = vreg[x] >> 1;
 				break;
 
@@ -312,7 +322,10 @@ bool Engine::cycle(const bool keymap[16]) {
 					vreg[x] = vreg[y];
 				}
 
-				vreg[0xF] = vreg[x] & 0b1;
+				if (x != 0xF) {
+					vreg[0xF] = vreg[x] & 0b1;
+				}
+
 				vreg[x] = vreg[x] << 1;
 				break;
 
