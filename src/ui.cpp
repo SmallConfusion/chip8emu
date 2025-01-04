@@ -168,5 +168,31 @@ void UI::drawEngine() {
 
 	SDL_UnlockTexture(gameTexture);
 
-	SDL_RenderCopy(renderer, gameTexture, nullptr, nullptr);
+	int w, h;
+	SDL_GetWindowSize(window, &w, &h);
+
+	constexpr double daspect = 128.0 / 64.0;
+	double aspect = (double)w / h;
+
+	int cx = w / 2;
+	int cy = h / 2;
+
+	int outh, outw;
+
+	if (aspect > daspect) {
+		outh = h;
+		outw = outh * daspect;
+	} else {
+		outw = w;
+		outh = outw / daspect;
+	}
+
+	SDL_Rect dest(
+		cx - outw / 2,
+		cy - outh / 2, 
+		outw,
+		outh
+	);
+
+	SDL_RenderCopy(renderer, gameTexture, nullptr, &dest);
 }
