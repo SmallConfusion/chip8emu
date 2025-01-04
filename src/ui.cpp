@@ -93,6 +93,12 @@ void UI::mainloop() {
 					debugVisible = !debugVisible;
 				} else if (ev.key.keysym.scancode == SDL_SCANCODE_F10) {
 					step = true;
+				} else if (ev.key.keysym.scancode == SDL_SCANCODE_F11) {
+					isFullscreen = !isFullscreen;
+
+					SDL_SetWindowFullscreen(
+						window,
+						isFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 				}
 
 				for (int i = 0; i < 16; i++) {
@@ -187,12 +193,7 @@ void UI::drawEngine() {
 		outh = outw / daspect;
 	}
 
-	SDL_Rect dest(
-		cx - outw / 2,
-		cy - outh / 2, 
-		outw,
-		outh
-	);
+	SDL_Rect dest(cx - outw / 2, cy - outh / 2, outw, outh);
 
 	SDL_RenderCopy(renderer, gameTexture, nullptr, &dest);
 }

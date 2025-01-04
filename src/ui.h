@@ -28,4 +28,6 @@ class UI {
 
 	bool running = false;
 	bool debugVisible = true;
+
+	bool isFullscreen = false;
 };
