@@ -412,8 +412,8 @@ bool Engine::cycle(const bool keymap[16]) {
 
 		// Font character
 	} else if ((fetched & 0xF0FF) == 0xF029) {
-		byte c = (fetched & 0x0F00) >> 8;
-		ireg = FONT_ADDR + 20 * c;
+		byte r = (fetched & 0x0F00) >> 8;
+		ireg = FONT_ADDR + 5 * vreg[r];
 
 		// Binary decimal conversion
 	} else if ((fetched & 0xF0FF) == 0xF033) {
