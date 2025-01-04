@@ -65,6 +65,13 @@ void UI::debugInfo(std::function<void(void)> info) const {
 }
 
 void UI::mainloop() {
+	constexpr SDL_Scancode keys[16] = {
+		SDL_SCANCODE_X, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3,
+		SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_A,
+		SDL_SCANCODE_S, SDL_SCANCODE_D, SDL_SCANCODE_Z, SDL_SCANCODE_C,
+		SDL_SCANCODE_4, SDL_SCANCODE_R, SDL_SCANCODE_F, SDL_SCANCODE_V,
+	};
+
 	step = false;
 
 	SDL_Event ev;
@@ -75,17 +82,26 @@ void UI::mainloop() {
 			case SDL_QUIT:
 				running = false;
 				break;
+
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 					debugVisible = !debugVisible;
 				} else if (ev.key.keysym.scancode == SDL_SCANCODE_F10) {
 					step = true;
 				}
+
+				for (int i = 0; i < 16; i++) {
+					keymap[i] = keymap[i] || ev.key.keysym.scancode == keys[i];
+				}
+				break;
+
+			case SDL_KEYUP:
+				for (int i = 0; i < 16; i++) {
+					keymap[i] = keymap[i] && ev.key.keysym.scancode != keys[i];
+				}
 				break;
 		}
 	}
-
-	bool isRunning = true;
 
 	ImGui_ImplSDLRenderer2_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
@@ -98,6 +114,23 @@ void UI::mainloop() {
 
 	if (debugVisible) {
 		Debug::show(engine);
+
+		ImGui::Begin("Keymap");
+
+		if (ImGui::BeginTable("Keymap Table", 4)) {
+			for (int i = 0; i < 16; i++) {
+				ImGui::TableNextColumn();
+				ImGui::Text(keymap[i] ? "@" : "_");
+
+				if (i + 1 % 4 == 0) {
+					ImGui::TableNextRow();
+				}
+			}
+
+			ImGui::EndTable();
+		}
+
+		ImGui::End();
 	}
 
 	ImGui::EndFrame();

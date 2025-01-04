@@ -1,19 +1,19 @@
 #pragma once
 #include <SDL.h>
-#include "engine/engine.h"
 #include <functional>
+#include "engine/engine.h"
 
 class UI {
    public:
 	UI(Engine engine) : engine(engine) {};
 
 	bool step = false;
+	bool keymap[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	void run();
 	bool hasImgui();
 
 	void debugInfo(std::function<void(void)> info) const;
-
 
    private:
 	void mainloop();

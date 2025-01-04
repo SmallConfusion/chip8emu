@@ -9,8 +9,11 @@
 #include "util.h"
 
 constexpr int RAMSIZE = 1 << 12;
+constexpr addr FONT_ADDR = 0x050;
 
 Engine::Engine() {
+	nextInstruction = nextTimerDec = SDL_GetTicks();
+
 	ram.resize(RAMSIZE, 0);
 	vreg.resize(16, 0);
 
@@ -37,25 +40,55 @@ void Engine::loadROM(const char* filename) {
 	}
 }
 
+void Engine::loadROM(const byte* bytes, int length) {
+	for (int i = 0; i < length; i++) {
+		ram[512 + i] = bytes[i];
+	}
+}
+
 void Engine::update(const UI& ui) {
 	ui.debugInfo([&] {
 		ImGui::Begin("Engine config");
 
 		ImGui::Checkbox("Step mode", &stepMode);
+		ImGui::InputDouble("Cycles per second", &cps);
 
 		ImGui::Checkbox("Bit shift comatability (8XY6 and 8XYE)", &shiftCompat);
+		ImGui::Checkbox("Jump compatability (bxnn (on) vs bnnn (off))",
+						&bxnnCompat);
+		ImGui::Checkbox("Add to index overflow compatability",
+						&addIndexOverflowCompat);
+		ImGui::Checkbox("Increment index when saving and loading ram",
+						&memoryIncI);
+		ImGui::Checkbox("Binary operations reset VF compatability",
+						&binaryResetVFCompat);
 
 		ImGui::End();
 	});
 
-	int cycles = 700 / 165;
+	unsigned int time = SDL_GetTicks();
 
-	if (stepMode) {
-		cycles = ui.step ? 1 : 0;
+	while (time > nextTimerDec) {
+		nextTimerDec += 1000.0 / 60.0;
+
+		if (timer > 0) {
+			timer--;
+		}
+
+		if (sound > 0) {
+			sound--;
+		}
 	}
 
-	for (; cycles > 0; cycles--) {
-		cycle();
+	if (stepMode) {
+		if (ui.step) {
+			cycle(ui.keymap);
+		}
+	} else {
+		while (nextInstruction < time) {
+			cycle(ui.keymap);
+			nextInstruction += 1000 / cps;
+		}
 	}
 }
 
@@ -109,7 +142,6 @@ void Engine::loadSystem() {
 	};
 
 	constexpr int FONT_LENGTH = sizeof(FONT) / sizeof(byte);
-	constexpr addr FONT_ADDR = 0x050;
 
 	for (int i = 0; i < FONT_LENGTH; i++) {
 		ram[FONT_ADDR + i] = FONT[i];
@@ -118,9 +150,11 @@ void Engine::loadSystem() {
 	pc = 512;
 }
 
-void Engine::cycle() {
+bool Engine::cycle(const bool keymap[16]) {
 	inst fetched = (ram[pc] << 8) + ram[pc + 1];
 	pc += 2;
+
+	inst nibble = fetched & 0xF000;
 
 	auto noInst = [&]() {
 		std::println("Instruction {:} at {:} not recognized!",
@@ -130,33 +164,33 @@ void Engine::cycle() {
 	if (fetched == I_CLEAR_SCREEN) {
 		display.reset();
 
-	} else if ((fetched & I_JUMP_CHECK) == I_JUMP) {
+	} else if (nibble == I_JUMP) {
 		addr jumpLoc = fetched & I_JUMP_MASK;
 		pc = jumpLoc;
 
-	} else if ((fetched & I_SET_REG_CHECK) == I_SET_REG) {
+	} else if (nibble == I_SET_REG) {
 		byte reg = (fetched & I_SET_REG_REG_MASK) >> I_SET_REG_REG_SHIFT;
 		byte val = fetched & I_SET_REG_VALUE_MASK;
 		vreg[reg] = val;
 
-	} else if ((fetched & I_ADD_REG_CHECK) == I_ADD_REG) {
+	} else if (nibble == I_ADD_REG) {
 		byte reg = (fetched & I_ADD_REG_REG_MASK) >> I_ADD_REG_REG_SHIFT;
 		byte val = fetched & I_ADD_REG_VALUE_MASK;
 		vreg[reg] += val;
 
-	} else if ((fetched & I_SET_INDEX_CHECK) == I_SET_INDEX) {
+	} else if (nibble == I_SET_INDEX) {
 		addr val = fetched & I_SET_INDEX_MASK;
 		ireg = val;
 
-	} else if ((fetched & I_DRAW_CHECK) == I_DRAW) {
+	} else if (nibble == I_DRAW) {
 		byte xr = (fetched & I_DRAW_X_MASK) >> I_DRAW_X_SHIFT;
 		byte yr = (fetched & I_DRAW_Y_MASK) >> I_DRAW_Y_SHIFT;
 		byte height = fetched & I_DRAW_HEIGHT_MASK;
 
 		draw(xr, yr, height);
 
-		// Conditional skips 3XNN 4XNN 5XY0 6XY0
-	} else if ((fetched & 0xF000) == 0x3000) {
+		// Conditional skips 3XNN 4XNN 5XY0 9XY0
+	} else if (nibble == 0x3000) {
 		byte r = (fetched & 0x0F00) >> 8;
 		byte x = fetched & 0x00FF;
 
@@ -164,7 +198,7 @@ void Engine::cycle() {
 			pc += 2;
 		}
 
-	} else if ((fetched & 0xF000) == 0x4000) {
+	} else if (nibble == 0x4000) {
 		byte r = (fetched & 0x0F00) >> 8;
 		byte x = fetched & 0x00FF;
 
@@ -172,7 +206,7 @@ void Engine::cycle() {
 			pc += 2;
 		}
 
-	} else if ((fetched & 0xF000) == 0x5000) {
+	} else if (nibble == 0x5000) {
 		byte rx = (fetched & 0x0F00) >> 8;
 		byte ry = (fetched & 0x00F0) >> 4;
 
@@ -180,7 +214,7 @@ void Engine::cycle() {
 			pc += 2;
 		}
 
-	} else if ((fetched & 0xF000) == 0x5000) {
+	} else if (nibble == 0x9000) {
 		byte rx = (fetched & 0x0F00) >> 8;
 		byte ry = (fetched & 0x00F0) >> 4;
 
@@ -189,7 +223,7 @@ void Engine::cycle() {
 		}
 
 		// Subroutines
-	} else if ((fetched & 0xF000) == 0x2000) {
+	} else if (nibble == 0x2000) {
 		addr subroutine = fetched & 0x0FFF;
 
 		stack.push(pc);
@@ -200,7 +234,7 @@ void Engine::cycle() {
 		stack.pop();
 
 		// Logic and arithmatic instructions 8XY0
-	} else if ((fetched & 0xF000) == 0x8000) {
+	} else if (nibble == 0x8000) {
 		int x = (fetched & 0x0F00) >> 8;
 		int y = (fetched & 0x00F0) >> 4;
 
@@ -208,30 +242,49 @@ void Engine::cycle() {
 
 		switch (end) {
 			case 0:
+				if (binaryResetVFCompat) {
+					vreg[0xF] = 0;
+				}
+
 				vreg[x] = vreg[y];
 				break;
 
 			case 1:
+				if (binaryResetVFCompat) {
+					vreg[0xF] = 0;
+				}
+
 				vreg[x] |= vreg[y];
 				break;
 
 			case 2:
+				if (binaryResetVFCompat) {
+					vreg[0xF] = 0;
+				}
+
 				vreg[x] &= vreg[y];
 				break;
 
 			case 3:
+				if (binaryResetVFCompat) {
+					vreg[0xF] = 0;
+				}
+
 				vreg[x] ^= vreg[y];
 				break;
 
 			case 4:
+				vreg[0xF] = (int)vreg[x] + (int)vreg[y] > 255 ? 1 : 0;
 				vreg[x] += vreg[y];
 				break;
 
 			case 5:	 // Subtract - OUT OF ORDER
+				vreg[0xF] = (int)vreg[x] - (int)vreg[y] > 0 ? 1 : 0;
 				vreg[x] = vreg[x] - vreg[y];
 				break;
 
 			case 7:	 // Subtract - OUT OF ORDER
+				vreg[0xF] = (int)vreg[y] - (int)vreg[x] > 0 ? 1 : 0;
 				vreg[x] = vreg[y] - vreg[x];
 				break;
 
@@ -244,7 +297,7 @@ void Engine::cycle() {
 				vreg[x] = vreg[x] >> 1;
 				break;
 
-			case 0xE:
+			case 0xE:  // Shift - OUT OF ORDER
 				if (shiftCompat) {
 					vreg[x] = vreg[y];
 				}
@@ -257,6 +310,137 @@ void Engine::cycle() {
 				noInst();
 		}
 
+		// Jump with offset
+	} else if (nibble == 0xB000) {
+		addr to;
+
+		if (bxnnCompat) {
+			addr add = fetched & 0x0FFF;
+			byte r = (fetched & 0x0F00) >> 8;
+			to = vreg[r] + add;
+		} else {
+			addr add = fetched & 0x0FFF;
+			to = vreg[0] + add;
+		}
+
+		pc = to;
+
+		// Random
+	} else if (nibble == 0xC000) {
+		byte reg = (fetched & 0x0F00) >> 8;
+		byte andVal = fetched & 0x00FF;
+
+		byte res = andVal & rand::get(0, 0xFF);
+
+		vreg[reg] = res;
+
+		// Skip if key
+	} else if (nibble == 0xE000) {
+		byte r = (fetched & 0x0F00) >> 8;
+
+		bool pressed;
+		if ((fetched & 0x00FF) == 0x009E) {
+			pressed = true;
+		} else if ((fetched & 0x00FF) == 0x00A1) {
+			pressed = false;
+		} else {
+			noInst();
+			return false;
+		}
+
+		bool skip = pressed == keymap[vreg[r]];
+
+		if (skip) {
+			pc += 2;
+		}
+
+		// Timers
+	} else if ((fetched & 0xF0FF) == 0xF007) {
+		byte r = (fetched & 0x0F00) >> 8;
+		vreg[r] = timer;
+
+	} else if ((fetched & 0xF0FF) == 0xF015) {
+		byte r = (fetched & 0x0F00) >> 8;
+		timer = vreg[r];
+
+	} else if ((fetched & 0xF0FF) == 0xF018) {
+		byte r = (fetched & 0x0F00) >> 8;
+		sound = vreg[r];
+
+		// Add to index
+	} else if ((fetched & 0xF0FF) == 0xF01E) {
+		byte r = (fetched & 0x0F00) >> 8;
+		ireg += vreg[r];
+
+		if (!addIndexOverflowCompat) {
+			vreg[0xF] = ireg > 0x0FFF;
+		}
+
+		// Get key
+	} else if ((fetched & 0xF0FF) == 0xF00A) {
+		byte r = (fetched & 0x0F00) >> 8;
+
+		if (waitUntilKeyReleased > 0) {
+			if (!keymap[waitUntilKeyReleased]) {
+				vreg[r] = waitUntilKeyReleased;
+				waitUntilKeyReleased = -1;
+				return false;
+			}
+			
+			pc -= 2;
+			return true;
+		}
+
+		for (int i = 0; i < 16; i++) {
+			if (keymap[i]) {
+				waitUntilKeyReleased = i;
+			}
+		}
+
+		pc -= 2;
+		return true;
+
+		// Font character
+	} else if ((fetched & 0xF0FF) == 0xF029) {
+		byte c = (fetched & 0x0F00) >> 8;
+		ireg = FONT_ADDR + 20 * c;
+
+		// Binary decimal conversion
+	} else if ((fetched & 0xF0FF) == 0xF033) {
+		byte r = (fetched & 0x0F00) >> 8;
+		byte n = vreg[r];
+
+		byte c1 = n / 100;
+		byte c2 = (n % 100) / 10;
+		byte c3 = n % 10;
+
+		ram[ireg] = c1;
+		ram[ireg + 1] = c2;
+		ram[ireg + 2] = c3;
+
+		// Memory
+	} else if ((fetched & 0xF0FF) == 0xF055) {
+		byte er = (fetched & 0x0F00) >> 8;
+
+		for (int i = 0; i <= er; i++) {
+			ram[ireg + i] = vreg[i];
+		}
+
+		if (memoryIncI) {
+			ireg += er + 1;
+		}
+
+	} else if ((fetched & 0xF0FF) == 0xF065) {
+		byte er = (fetched & 0x0F00) >> 8;
+
+		for (int i = 0; i <= er; i++) {
+			vreg[i] = ram[ireg + i];
+		}
+
+		if (memoryIncI) {
+			ireg += er + 1;
+		}
+
 	} else {
 		noInst();
 	}
@@ -267,8 +451,8 @@ void Engine::draw(byte xr, byte yr, byte height) {
 	constexpr int SCREEN_HEIGHT = 32;
 	constexpr int SPRITE_WIDTH = 8;
 
-	int xb = vreg[xr] % SCREEN_WIDTH;
-	int yb = vreg[yr] % SCREEN_HEIGHT;
+	int xb = vreg[xr] & 63;
+	int yb = vreg[yr] & 31;
 
 	vreg[0xF] = 0;
 
@@ -276,7 +460,7 @@ void Engine::draw(byte xr, byte yr, byte height) {
 		byte spriteRow = ram[ireg + row];
 
 		for (int i = 0; i < SPRITE_WIDTH; i++) {
-			if ((spriteRow & (0b1 << (SPRITE_WIDTH - 1 - i))) == 0) {
+			if ((spriteRow & (0b10000000 >> i)) == 0) {
 				continue;
 			}
 
@@ -289,7 +473,7 @@ void Engine::draw(byte xr, byte yr, byte height) {
 
 			int displayIndex = xp + yp * SCREEN_WIDTH;
 
-			if (display.test(displayIndex)) {
+			if (display[displayIndex]) {
 				vreg[0xF] = 1;
 			}
 
