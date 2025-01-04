@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "engine/rand.h"
 #include <fstream>
 
 constexpr int RAMSIZE = 1 << 12;
@@ -26,7 +27,17 @@ void Engine::loadROM(const char* filename) {
 	}
 }
 
-void Engine::update() {}
+void Engine::update() {
+	for (int i = 0; i < 64 * 32; i++) {
+		if (rand::get() % 2 == 0) {
+			display.flip(i);
+		}
+	}
+}
+
+const std::bitset<64 * 32>& Engine::getDisplay() const {
+	return display;
+}
 
 void Engine::reset() {
 	for (byte& a : ram) {

@@ -12,7 +12,10 @@ add_executable (chip8
 	src/main.cpp
 	src/ui.cpp
 
-	src/engine/engine.cpp "src/engine/debug.cpp")
+	src/engine/engine.cpp
+	src/engine/debug.cpp
+	src/engine/rand.cpp
+)
 
 FetchContent_Declare(imgui
 	GIT_REPOSITORY https://github.com/ocornut/imgui.git

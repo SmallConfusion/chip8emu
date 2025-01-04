@@ -16,6 +16,8 @@ class Engine {
 	void loadROM(const char* filename);
 	void update();
 
+	const std::bitset<64 * 32>& getDisplay() const;
+
    protected:
 	std::bitset<64 * 32> display;
 

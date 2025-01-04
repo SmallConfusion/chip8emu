@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
 
 	engine.loadROM("../../../programs/IBM Logo.ch8");
 
-	UI ui(&engine);
+	UI ui(engine);
 	ui.run();
 	
 	return 0;

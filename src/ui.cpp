@@ -26,7 +26,7 @@ void UI::run() {
 	}
 
 	gameTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
-									SDL_TEXTUREACCESS_STREAMING, 128, 64);
+									SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -81,18 +81,43 @@ void UI::mainloop() {
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 
-	engine->update();
+	SDL_RenderClear(renderer);
+
+	engine.update();
+	drawEngine();
 
 	if (debugVisible) {
-		Debug::show(*engine);
+		Debug::show(engine);
 	}
 
 	ImGui::EndFrame();
-
-	SDL_RenderClear(renderer);
 
 	ImGui::Render();
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
 	SDL_RenderPresent(renderer);
+}
+
+void UI::drawEngine() {
+	constexpr uint32_t FOREGROUND = 0xFFFFFFFF;
+	constexpr uint32_t BACKGROUND = 0xFF000000;
+
+	std::bitset<32 * 64> screen = engine.getDisplay();
+
+	uint32_t* pixels;
+	int pitch;
+
+	SDL_LockTexture(gameTexture, nullptr, (void**)&pixels, &pitch);
+
+	for (int i = 0; i < 32 * 64; i++) {
+		if (screen.test(i)) {
+			pixels[i] = FOREGROUND;
+		} else {
+			pixels[i] = BACKGROUND;
+		}
+	}
+
+	SDL_UnlockTexture(gameTexture);
+
+	SDL_RenderCopy(renderer, gameTexture, nullptr, nullptr);
 }
