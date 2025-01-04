@@ -39,7 +39,7 @@ void Engine::loadROM(const char* filename) {
 void Engine::update(const UI& ui) {
 	constexpr bool STEP_MODE = false;
 
-	int cycles = 700/165;
+	int cycles = 700 / 165;
 
 	if (STEP_MODE) {
 		cycles = ui.step ? 1 : 0;
@@ -173,6 +173,17 @@ void Engine::cycle() {
 		if (vreg[rx] != vreg[ry]) {
 			pc += 2;
 		}
+
+		// Subroutines
+	} else if ((fetched & 0xF000) == 0x2000) {
+		addr subroutine = fetched & 0x0FFF;
+
+		stack.push(pc);
+		pc = subroutine;
+
+	} else if (fetched == I_RETURN) {
+		pc = stack.top();
+		stack.pop();
 
 	} else {
 		std::println("Instruction {:} at {:} not recognized!",

@@ -1,7 +1,7 @@
 #pragma once
 #include <bitset>
 #include <cstdint>
-#include <queue>
+#include <stack>
 #include <vector>
 #include "engine/engineTypes.h"
 
@@ -27,7 +27,7 @@ class Engine {
 	addr pc, ireg;
 	byte timer, sound;
 
-	std::queue<addr> stack;
+	std::stack<addr> stack;
 
    private:
 	void reset();

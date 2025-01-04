@@ -31,3 +31,4 @@ constexpr inst I_DRAW_Y_MASK = 0x00F0;
 constexpr byte I_DRAW_Y_SHIFT = 4;
 constexpr inst I_DRAW_HEIGHT_MASK = 0x000F;
 
+constexpr inst I_RETURN = 0x00EE;
