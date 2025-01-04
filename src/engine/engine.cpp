@@ -287,47 +287,43 @@ bool Engine::cycle(const bool keymap[16]) {
 
 				break;
 
-			case 4:
+			case 4: {
 				short res = vreg[x] + vreg[y];
-				vreg[x] = res & 0xF;			
-				vreg[0xF] = res > 0xF;
+				vreg[x] = res & 0xFF;
+				vreg[0xF] = res > 0xFF;
+			} break;
 
-				break;
+			case 5: {  // Subtract - OUT OF ORDER
+				byte carry = vreg[x] >= vreg[y];
+				vreg[x] = vreg[x] - vreg[y];
+				vreg[0xF] = carry;
+			} break;
 
-			case 5:	 // Subtract - OUT OF ORDER
-				short res = vreg[x] - vreg[y];
-				vreg[x] = res & 0xF;
-				vreg[0xF] = res > 0;
+			case 7: {  // Subtract - OUT OF ORDER
+				byte carry = vreg[y] >= vreg[x];
+				vreg[x] = vreg[y] - vreg[x];
+				vreg[0xF] = carry;
+			} break;
 
-				break;
-
-			case 7:	 // Subtract - OUT OF ORDER
-				short res = vreg[y] - vreg[x];
-				vreg[x] = res & 0xF;
-				vreg[0xF] = res > 0;
-
-				break;
-
-			case 6:	 // Shift - OUT OF ORDER
+			case 6: {  // Shift - OUT OF ORDER
 				if (shiftCompat) {
 					vreg[x] = vreg[y];
 				}
 
 				byte carry = vreg[x] & 0b1;
 				vreg[x] = vreg[x] >> 1;
-				break;
+				vreg[0xF] = carry;
+			} break;
 
-			case 0xE:  // Shift - OUT OF ORDER
+			case 0xE: {	 // Shift - OUT OF ORDER
 				if (shiftCompat) {
 					vreg[x] = vreg[y];
 				}
 
-				if (x != 0xF) {
-					vreg[0xF] = vreg[x] & 0b1;
-				}
-
+				byte carry = (vreg[x] & 0b10000000) > 0;
 				vreg[x] = vreg[x] << 1;
-				break;
+				vreg[0xF] = carry;
+			} break;
 
 			default:
 				noInst();
