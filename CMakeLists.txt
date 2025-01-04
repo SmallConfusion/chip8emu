@@ -21,16 +21,19 @@ add_executable (chip8
 FetchContent_Declare(imgui
 	GIT_REPOSITORY https://github.com/ocornut/imgui.git
 	GIT_TAG v1.91.6
+	GIT_SHALLOW ON
 )
 
 FetchContent_Declare(SDL2
 	GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
 	GIT_TAG release-2.30.10
+	GIT_SHALLOW ON
 )
 
 FetchContent_Declare(nfd
 	GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
 	GIT_TAG v1.2.1
+	GIT_SHALLOW ON
 )
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
