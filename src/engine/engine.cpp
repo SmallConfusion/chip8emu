@@ -454,6 +454,8 @@ bool Engine::cycle(const bool keymap[16]) {
 	} else {
 		noInst();
 	}
+
+	return false;
 }
 
 void Engine::draw(byte xr, byte yr, byte height) {
