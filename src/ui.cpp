@@ -28,6 +28,8 @@ void UI::run() {
 	gameTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
 									SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
+	engine->loadAudio();
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
@@ -109,7 +111,7 @@ void UI::mainloop() {
 
 	SDL_RenderClear(renderer);
 
-	engine.update(*this);
+	engine->update(*this);
 	drawEngine();
 
 	if (debugVisible) {
@@ -145,7 +147,7 @@ void UI::drawEngine() {
 	constexpr uint32_t FOREGROUND = 0xFFFFFFFF;
 	constexpr uint32_t BACKGROUND = 0xFF000000;
 
-	std::bitset<32 * 64> screen = engine.getDisplay();
+	std::bitset<32 * 64> screen = engine->getDisplay();
 
 	uint32_t* pixels;
 	int pitch;

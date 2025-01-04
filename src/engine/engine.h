@@ -1,10 +1,12 @@
 #pragma once
+#include <SDL.h>
 #include <bitset>
 #include <chrono>
 #include <cstdint>
 #include <stack>
 #include <vector>
 #include "engine/engineTypes.h"
+#include "engine/sound.h"
 
 class UI;
 
@@ -13,6 +15,8 @@ class Engine {
 
    public:
 	Engine();
+
+	void loadAudio();
 
 	void loadROM(const char* filename);
 	void loadROM(const byte* bytes, int length);
@@ -55,6 +59,9 @@ class Engine {
 	bool binaryResetVFCompat = true;
 
 	void reset();
+
+	std::unique_ptr<Sound> soundPlayer;
+
 	void loadSystem();
 	bool cycle(const bool keymap[16]);
 	void draw(byte xr, byte yr, byte height);

@@ -15,7 +15,7 @@ add_executable (chip8
 	src/engine/engine.cpp
 	src/engine/debug.cpp
 	src/engine/rand.cpp
-)
+ "src/engine/sound.cpp")
 
 FetchContent_Declare(imgui
 	GIT_REPOSITORY https://github.com/ocornut/imgui.git

@@ -1,10 +1,12 @@
 #include "engine.h"
 #include <imgui.h>
+#include <cmath>
 #include <fstream>
 #include <print>
 #include "engine/engineTypes.h"
 #include "engine/instructions.h"
 #include "engine/rand.h"
+#include "engine/sound.h"
 #include "ui.h"
 #include "util.h"
 
@@ -18,6 +20,10 @@ Engine::Engine() {
 	vreg.resize(16, 0);
 
 	reset();
+}
+
+void Engine::loadAudio() {
+	soundPlayer = std::make_unique<Sound>();
 }
 
 void Engine::loadROM(const char* filename) {
@@ -64,6 +70,8 @@ void Engine::update(const UI& ui) {
 						&binaryResetVFCompat);
 
 		ImGui::End();
+
+		soundPlayer->showUI();
 	});
 
 	unsigned int time = SDL_GetTicks();
@@ -79,6 +87,8 @@ void Engine::update(const UI& ui) {
 			sound--;
 		}
 	}
+
+	soundPlayer->playing = sound > 0;
 
 	if (stepMode) {
 		if (ui.step) {
@@ -386,7 +396,7 @@ bool Engine::cycle(const bool keymap[16]) {
 				waitUntilKeyReleased = -1;
 				return false;
 			}
-			
+
 			pc -= 2;
 			return true;
 		}

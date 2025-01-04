@@ -12,3 +12,7 @@ unsigned int rand::get() {
 int rand::get(int start, int end) {
 	return std::uniform_int_distribution<int>(start, end)(rng);
 }
+
+double rand::getDouble(double start, double end) {
+	return std::uniform_real_distribution<double>(start, end)(rng);
+}

@@ -5,7 +5,7 @@
 
 class UI {
    public:
-	UI(Engine engine) : engine(engine) {};
+	UI(Engine* engine) : engine(engine) {};
 
 	bool step = false;
 	bool keymap[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -19,7 +19,7 @@ class UI {
 	void mainloop();
 	void drawEngine();
 
-	Engine engine;
+	Engine* engine;
 
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
