@@ -3,11 +3,14 @@
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
+#include <nfd.h>
 #include <print>
 #include "engine/debug.h"
 #include "engine/engine.h"
 
 void UI::run() {
+	NFD_Init();
+
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
 	window = SDL_CreateWindow("Chip8", SDL_WINDOWPOS_CENTERED,
@@ -117,19 +120,20 @@ void UI::mainloop() {
 	if (debugVisible) {
 		Debug::show(engine);
 
-		ImGui::Begin("Keymap");
+		ImGui::Begin("Load");
 
-		if (ImGui::BeginTable("Keymap Table", 4)) {
-			for (int i = 0; i < 16; i++) {
-				ImGui::TableNextColumn();
-				ImGui::Text(keymap[i] ? "@" : "_");
+		if (ImGui::Button("Load ROM")) {
+			nfdu8char_t* out;
+			nfdopendialogu8args_t args = {0};
+			nfdfilteritem_t filter[1] = {{"Rom", "ch8"}};
+			args.filterList = filter;
+			args.filterCount = 1;
 
-				if (i + 1 % 4 == 0) {
-					ImGui::TableNextRow();
-				}
+			nfdresult_t res = NFD_OpenDialogU8_With(&out, &args);
+
+			if (res == NFD_OKAY) {
+				engine->loadROM(out);
 			}
-
-			ImGui::EndTable();
 		}
 
 		ImGui::End();
