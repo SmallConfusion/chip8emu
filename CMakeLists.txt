@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.29)
 
-option(STATIC_BUILD "Links the standard library statically for release" OFF)
+option(STATIC_BUILD "Links the standard library statically for release" ON)
 option(USE_LTO "Uses link time optimization if release build" ON)
 
 project ("chip8")
@@ -36,7 +36,7 @@ FetchContent_Declare(nfd
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 	if (${STATIC_BUILD})
 		message("Static build enabled")
-		target_link_libraries(raytracing PRIVATE -static)
+		target_link_libraries(chip8 PRIVATE -static)
 	endif()
 
 	if (${USE_LTO})
@@ -45,7 +45,7 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 
 		if (supported)
 			message("Link time optimization enabled")
-			set_property(TARGET raytracing PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+			set_property(TARGET chip8 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 		endif()
 	endif()
 endif()
