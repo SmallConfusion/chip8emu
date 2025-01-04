@@ -59,6 +59,8 @@ bool UI::hasImgui() {
 }
 
 void UI::mainloop() {
+	step = false;
+
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev) != 0) {
 		ImGui_ImplSDL2_ProcessEvent(&ev);
@@ -70,6 +72,8 @@ void UI::mainloop() {
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 					debugVisible = !debugVisible;
+				} else if (ev.key.keysym.scancode == SDL_SCANCODE_F10) {
+					step = true;
 				}
 				break;
 		}
@@ -83,7 +87,7 @@ void UI::mainloop() {
 
 	SDL_RenderClear(renderer);
 
-	engine.update();
+	engine.update(*this);
 	drawEngine();
 
 	if (debugVisible) {

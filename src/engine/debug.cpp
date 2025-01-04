@@ -21,11 +21,17 @@ void Debug::showRam(const Engine& engine) {
 
 		for (int i = 0; i < 4096; i++) {
 			ImGui::TableNextColumn();
-			ImGui::Text(util::byteToHex(engine.ram[i]).c_str());
+
+			ImVec4 c = (engine.pc == i || engine.pc + 1 == i)
+						   ? ImVec4(0.05, 0.05, 0.7, 1.0)
+						   : ImVec4(0, 0, 0, 1);
+
+			ImGui::TextColored(c, util::byteToHex(engine.ram[i]).c_str());
 
 			if ((i + 1) % 16 == 0) {
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
+
 				ImGui::Text(util::addrToHex(i + 1).c_str());
 			}
 		}
@@ -40,7 +46,7 @@ void Debug::showRegs(const Engine& engine) {
 	ImGui::Begin("Registers");
 
 	for (int i = 0; i < 16; i++) {
-		ImGui::LabelText(std::format("v{}", util::bitsToHex(i)).c_str(),
+		ImGui::LabelText(std::format("v{}", util::nibbleToHex(i)).c_str(),
 						 util::byteToHex(engine.vreg[i]).c_str());
 	}
 
@@ -55,6 +61,11 @@ void Debug::showProgram(const Engine& engine) {
 
 	ImGui::LabelText("Delay Timer", util::byteToHex(engine.timer).c_str());
 	ImGui::LabelText("Sound Timer", util::byteToHex(engine.sound).c_str());
+
+	ImGui::LabelText("Last executed",
+					 util::instructionToHex((engine.ram[engine.pc - 2] << 8) +
+											engine.ram[engine.pc - 1])
+						 .c_str());
 
 	ImGui::End();
 }

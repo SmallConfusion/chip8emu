@@ -6,8 +6,11 @@ class UI {
    public:
 	UI(Engine engine) : engine(engine) {};
 
+	bool step = false;
+
 	void run();
 	bool hasImgui();
+
 
    private:
 	void mainloop();

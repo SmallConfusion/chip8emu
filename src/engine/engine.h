@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <queue>
 #include <vector>
+#include "engine/engineTypes.h"
 
-typedef uint8_t byte;
-typedef uint16_t addr;
+class UI;
 
 class Engine {
 	friend class Debug;
@@ -14,7 +14,7 @@ class Engine {
 	Engine();
 
 	void loadROM(const char* filename);
-	void update();
+	void update(const UI& ui);
 
 	const std::bitset<64 * 32>& getDisplay() const;
 
@@ -32,4 +32,6 @@ class Engine {
    private:
 	void reset();
 	void loadSystem();
+	void cycle();
+	void draw(byte xr, byte yr, byte height);
 };
