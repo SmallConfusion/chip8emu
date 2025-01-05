@@ -2,6 +2,8 @@
 
 This is a chip 8 emulator, it does not support schip or any chip extensions.
 
+Press space to open or close the menus.
+
 ## Building
 
 Cmake will handle downloading the dependencies, because of that, configuration
