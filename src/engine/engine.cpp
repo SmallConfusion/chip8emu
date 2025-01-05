@@ -4,10 +4,9 @@
 #include <fstream>
 #include <print>
 #include "engine/engineTypes.h"
-#include "engine/instructions.h"
+#include "engine/memory.h"
 #include "engine/rand.h"
 #include "engine/sound.h"
-#include "engine/memory.h"
 #include "ui.h"
 #include "util.h"
 
@@ -172,31 +171,31 @@ bool Engine::cycle(const bool keymap[16]) {
 					 util::instructionToHex(fetched), util::addrToHex(pc - 2));
 	};
 
-	if (fetched == I_CLEAR_SCREEN) {
+	if (fetched == 0x00E0) {
 		display.reset();
 
-	} else if (nibble == I_JUMP) {
-		addr jumpLoc = fetched & I_JUMP_MASK;
+	} else if (nibble == 0x1000) {
+		addr jumpLoc = fetched & 0x0FFF;
 		pc = jumpLoc;
 
-	} else if (nibble == I_SET_REG) {
-		byte reg = (fetched & I_SET_REG_REG_MASK) >> I_SET_REG_REG_SHIFT;
-		byte val = fetched & I_SET_REG_VALUE_MASK;
+	} else if (nibble == 0x6000) {
+		byte reg = (fetched & 0x0F00) >> 8;
+		byte val = fetched & 0x00FF;
 		vreg[reg] = val;
 
-	} else if (nibble == I_ADD_REG) {
-		byte reg = (fetched & I_ADD_REG_REG_MASK) >> I_ADD_REG_REG_SHIFT;
-		byte val = fetched & I_ADD_REG_VALUE_MASK;
+	} else if (nibble == 0x7000) {
+		byte reg = (fetched & 0x0F00) >> 8;
+		byte val = fetched & 0x00FF;
 		vreg[reg] += val;
 
-	} else if (nibble == I_SET_INDEX) {
-		addr val = fetched & I_SET_INDEX_MASK;
+	} else if (nibble == 0xA000) {
+		addr val = fetched & 0x0FFF;
 		ireg = val;
 
-	} else if (nibble == I_DRAW) {
-		byte xr = (fetched & I_DRAW_X_MASK) >> I_DRAW_X_SHIFT;
-		byte yr = (fetched & I_DRAW_Y_MASK) >> I_DRAW_Y_SHIFT;
-		byte height = fetched & I_DRAW_HEIGHT_MASK;
+	} else if (nibble == 0xD000) {
+		byte xr = (fetched & 0x0F00) >> 8;
+		byte yr = (fetched & 0x00F0) >> 4;
+		byte height = fetched & 0x000F;
 
 		draw(xr, yr, height);
 
@@ -240,8 +239,8 @@ bool Engine::cycle(const bool keymap[16]) {
 		stack.push(pc);
 		pc = subroutine;
 
-	} else if (fetched == I_RETURN) {
-		pc = stack.top();
+	} else if (fetched == 0x00EE) {
+		pc = stack.top();  // pc has already been incremented at store
 		stack.pop();
 
 		// Logic and arithmatic instructions 8XY0

@@ -21,7 +21,7 @@ Sound::Sound() {
 	wantSpec.callback = generate;
 	wantSpec.userdata = this;
 
-	audioDevice = SDL_OpenAudioDevice(NULL, 0, &wantSpec, &haveSpec, NULL);
+	audioDevice = SDL_OpenAudioDevice(NULL, 0, &wantSpec, &haveSpec, 0);
 
 	if (audioDevice == 0) {
 		std::println("Error opening audio device: {:}", SDL_GetError());
