@@ -1,6 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.29)
 
-option(STATIC_BUILD "Links the standard library statically for release" ON)
 option(USE_LTO "Uses link time optimization if release build" ON)
 
 project ("chip8")
@@ -37,20 +36,13 @@ FetchContent_Declare(nfd
 	GIT_SHALLOW ON
 )
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-	if (${STATIC_BUILD})
-		message("Static build enabled")
-		target_link_libraries(chip8 PRIVATE -static)
-	endif()
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND ${USE_LTO})
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT supported OUTPUT error)
 
-	if (${USE_LTO})
-		include(CheckIPOSupported)
-		check_ipo_supported(RESULT supported OUTPUT error)
-
-		if (supported)
-			message("Link time optimization enabled")
-			set_property(TARGET chip8 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-		endif()
+	if (supported)
+		message("Link time optimization enabled")
+		set_property(TARGET chip8 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 	endif()
 endif()
 
@@ -66,7 +58,7 @@ target_sources(chip8 PUBLIC
 )
 
 target_link_libraries(chip8 PRIVATE
-	SDL2::SDL2-static
+	SDL2::SDL2
 	SDL2::SDL2main
 	nfd
 )
