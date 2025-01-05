@@ -6,6 +6,7 @@
 #include <stack>
 #include <vector>
 #include "engine/engineTypes.h"
+#include "engine/memory.h"
 #include "engine/sound.h"
 
 class UI;
@@ -27,7 +28,7 @@ class Engine {
    protected:
 	std::bitset<64 * 32> display;
 
-	std::vector<byte> ram;
+	Memory ram;
 	std::vector<byte> vreg;
 
 	addr pc, ireg;

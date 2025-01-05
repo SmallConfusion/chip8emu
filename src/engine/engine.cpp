@@ -7,6 +7,7 @@
 #include "engine/instructions.h"
 #include "engine/rand.h"
 #include "engine/sound.h"
+#include "engine/memory.h"
 #include "ui.h"
 #include "util.h"
 
@@ -16,7 +17,7 @@ constexpr addr FONT_ADDR = 0x050;
 Engine::Engine() {
 	nextInstruction = nextTimerDec = SDL_GetTicks();
 
-	ram.resize(RAMSIZE, 0);
+	ram.resize(RAMSIZE);
 	vreg.resize(16, 0);
 
 	reset();

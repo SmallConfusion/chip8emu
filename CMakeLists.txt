@@ -16,6 +16,7 @@ add_executable (chip8
 	src/engine/debug.cpp
 	src/engine/rand.cpp
 	src/engine/sound.cpp
+	src/engine/memory.cpp
 )
 
 FetchContent_Declare(imgui
