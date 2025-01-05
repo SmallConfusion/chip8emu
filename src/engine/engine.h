@@ -3,6 +3,7 @@
 #include <bitset>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <stack>
 #include <vector>
 #include "engine/engineTypes.h"
