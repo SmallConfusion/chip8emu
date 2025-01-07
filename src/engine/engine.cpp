@@ -1,4 +1,5 @@
 #include "engine.h"
+#include <algorithm>
 #include <imgui.h>
 #include <cmath>
 #include <fstream>
@@ -97,7 +98,7 @@ void Engine::update(const UI& ui) {
 	} else {
 		while (nextInstruction < time) {
 			cycle(ui.keymap);
-			nextInstruction += 1000 / cps;
+			nextInstruction += 1000 / std::max(cps, 0.1);
 		}
 	}
 }
