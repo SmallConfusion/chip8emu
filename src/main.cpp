@@ -1,6 +1,7 @@
 #include <filesystem>
 #include "engine/engine.h"
 #include "engine/engineTypes.h"
+#include <iostream>
 #include "ui.h"
 
 int main(int argc, char** argv) {

@@ -16,7 +16,7 @@ class UI {
 	void debugInfo(std::function<void(void)> info) const;
 
    private:
-	void mainloop();
+	static void mainloop(void* tv);	// should be UI* this
 	void drawEngine();
 
 	Engine* engine;

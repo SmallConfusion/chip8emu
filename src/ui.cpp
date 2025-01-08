@@ -3,13 +3,22 @@
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
-#include <nfd.h>
 #include <print>
 #include "engine/debug.h"
 #include "engine/engine.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+#ifndef __EMSCRIPTEN__
+#include <nfd.h>
+#endif
+
 void UI::run() {
+#ifndef __EMSCRIPTEN__
 	NFD_Init();
+#endif
 
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
@@ -46,8 +55,11 @@ void UI::run() {
 
 	running = true;
 
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop_arg(mainloop, (void*)this, 0, true);
+#else
 	while (running) {
-		mainloop();
+		mainloop((void*)this);
 	}
 
 	ImGui_ImplSDLRenderer2_Shutdown();
@@ -57,6 +69,7 @@ void UI::run() {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+#endif
 }
 
 bool UI::hasImgui() {
@@ -69,7 +82,9 @@ void UI::debugInfo(std::function<void(void)> info) const {
 	}
 }
 
-void UI::mainloop() {
+void UI::mainloop(void* tv) {
+	UI* t = (UI*)tv;
+
 	constexpr SDL_Scancode keys[16] = {
 		SDL_SCANCODE_X, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3,
 		SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_E, SDL_SCANCODE_A,
@@ -77,7 +92,7 @@ void UI::mainloop() {
 		SDL_SCANCODE_4, SDL_SCANCODE_R, SDL_SCANCODE_F, SDL_SCANCODE_V,
 	};
 
-	step = false;
+	t->step = false;
 
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev) != 0) {
@@ -85,30 +100,32 @@ void UI::mainloop() {
 
 		switch (ev.type) {
 			case SDL_QUIT:
-				running = false;
+				t->running = false;
 				break;
 
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-					debugVisible = !debugVisible;
+					t->debugVisible = !t->debugVisible;
 				} else if (ev.key.keysym.scancode == SDL_SCANCODE_F10) {
-					step = true;
+					t->step = true;
 				} else if (ev.key.keysym.scancode == SDL_SCANCODE_F11) {
-					isFullscreen = !isFullscreen;
+					t->isFullscreen = !t->isFullscreen;
 
 					SDL_SetWindowFullscreen(
-						window,
-						isFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+						t->window,
+						t->isFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 				}
 
 				for (int i = 0; i < 16; i++) {
-					keymap[i] = keymap[i] || ev.key.keysym.scancode == keys[i];
+					t->keymap[i] =
+						t->keymap[i] || ev.key.keysym.scancode == keys[i];
 				}
 				break;
 
 			case SDL_KEYUP:
 				for (int i = 0; i < 16; i++) {
-					keymap[i] = keymap[i] && ev.key.keysym.scancode != keys[i];
+					t->keymap[i] =
+						t->keymap[i] && ev.key.keysym.scancode != keys[i];
 				}
 				break;
 		}
@@ -118,14 +135,15 @@ void UI::mainloop() {
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 
-	SDL_RenderClear(renderer);
+	SDL_RenderClear(t->renderer);
 
-	engine->update(*this);
-	drawEngine();
+	t->engine->update(*t);
+	t->drawEngine();
 
-	if (debugVisible) {
-		Debug::show(engine);
+	if (t->debugVisible) {
+		Debug::show(t->engine);
 
+#ifndef __EMSCRIPTEN__
 		ImGui::Begin("Load");
 
 		if (ImGui::Button("Load ROM")) {
@@ -138,19 +156,20 @@ void UI::mainloop() {
 			nfdresult_t res = NFD_OpenDialogU8_With(&out, &args);
 
 			if (res == NFD_OKAY) {
-				engine->loadROM(out);
+				t->engine->loadROM(out);
 			}
 		}
 
 		ImGui::End();
+#endif
 	}
 
 	ImGui::EndFrame();
 
 	ImGui::Render();
-	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), t->renderer);
 
-	SDL_RenderPresent(renderer);
+	SDL_RenderPresent(t->renderer);
 }
 
 void UI::drawEngine() {
