@@ -69,6 +69,7 @@ void Engine::update(const UI& ui) {
 						&memoryIncI);
 		ImGui::Checkbox("Binary operations reset VF compatability",
 						&binaryResetVFCompat);
+		ImGui::Checkbox("Wrap sprites around the screen", &spriteWrap);
 
 		ImGui::End();
 
@@ -478,7 +479,7 @@ void Engine::draw(byte xr, byte yr, byte height) {
 
 	vreg[0xF] = 0;
 
-	for (int row = 0; row < height && row + yb < SCREEN_HEIGHT; row++) {
+	for (int row = 0; row < height; row++) {
 		byte spriteRow = ram[ireg + row];
 
 		for (int i = 0; i < SPRITE_WIDTH; i++) {
@@ -487,11 +488,16 @@ void Engine::draw(byte xr, byte yr, byte height) {
 			}
 
 			int xp = xb + i;
-			if (xp >= SCREEN_WIDTH) {
-				continue;
-			}
-
 			int yp = yb + row;
+
+			if (spriteWrap) {
+				xp = xp % SCREEN_WIDTH;
+				yp = yp % SCREEN_HEIGHT;
+			} else if (xp >= SCREEN_WIDTH) {
+				continue;
+			} else if (yp >= SCREEN_HEIGHT) {
+				return;
+			}
 
 			int displayIndex = xp + yp * SCREEN_WIDTH;
 

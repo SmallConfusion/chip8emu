@@ -60,6 +60,8 @@ class Engine {
 	// https://chip8.gulrak.net/#quirk4at
 	bool binaryResetVFCompat = true;
 
+	bool spriteWrap = false;
+
 	void reset();
 
 	std::unique_ptr<Sound> soundPlayer;
